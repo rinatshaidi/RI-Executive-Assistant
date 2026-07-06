@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="620" viewBox="0 0 1280 620" role="img" aria-labelledby="title desc">
+  <title id="title">AI Mail Assistant architecture diagram</title>
+  <desc id="desc">Public-safe architecture diagram for AI Mail Assistant.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7f8fa; }
+      .title { font: 700 28px Arial, sans-serif; fill: #1f2937; }
+      .label { font: 600 18px Arial, sans-serif; fill: #111827; }
+      .text { font: 14px Arial, sans-serif; fill: #374151; }
+      .box-blue { fill: #dbeafe; stroke: #2563eb; stroke-width: 2; }
+      .box-green { fill: #dcfce7; stroke: #16a34a; stroke-width: 2; }
+      .box-yellow { fill: #fef3c7; stroke: #d97706; stroke-width: 2; }
+      .box-pink { fill: #fce7f3; stroke: #db2777; stroke-width: 2; }
+      .box-gray { fill: #e5e7eb; stroke: #4b5563; stroke-width: 2; }
+      .arrow { stroke: #4b5563; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#4b5563" />
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1280" height="620" rx="20" />
+  <text class="title" x="40" y="48">AI Mail Assistant - Public-safe architecture</text>
+
+  <rect class="box-yellow" x="40" y="100" width="250" height="120" rx="16" />
+  <text class="label" x="60" y="132">Three IMAP inbox triggers</text>
+  <text class="text" x="60" y="160">Primary inbox</text>
+  <text class="text" x="60" y="182">Secondary inbox</text>
+  <text class="text" x="60" y="204">Gmail inbox</text>
+
+  <rect class="box-blue" x="360" y="100" width="220" height="120" rx="16" />
+  <text class="label" x="380" y="132">Normalize email</text>
+  <text class="text" x="380" y="160">Base fields</text>
+  <text class="text" x="380" y="182">Attachment check</text>
+
+  <rect class="box-green" x="650" y="70" width="230" height="90" rx="16" />
+  <text class="label" x="670" y="102">PDF path</text>
+  <text class="text" x="670" y="128">Extract text</text>
+
+  <rect class="box-green" x="650" y="180" width="230" height="90" rx="16" />
+  <text class="label" x="670" y="212">Spreadsheet path</text>
+  <text class="text" x="670" y="238">Extract rows and aggregate</text>
+
+  <rect class="box-blue" x="950" y="120" width="220" height="100" rx="16" />
+  <text class="label" x="970" y="152">Merge email and file</text>
+  <text class="text" x="970" y="178">One shared payload</text>
+
+  <rect class="box-pink" x="240" y="360" width="250" height="110" rx="16" />
+  <text class="label" x="260" y="392">AI branch 1</text>
+  <text class="text" x="260" y="418">Executive summary</text>
+  <text class="text" x="260" y="440">Telegram-ready text</text>
+
+  <rect class="box-pink" x="560" y="360" width="250" height="110" rx="16" />
+  <text class="label" x="580" y="392">AI branch 2</text>
+  <text class="text" x="580" y="418">Structured register JSON</text>
+  <text class="text" x="580" y="440">Safer parsing step</text>
+
+  <rect class="box-gray" x="880" y="360" width="170" height="110" rx="16" />
+  <text class="label" x="900" y="392">Google Sheets</text>
+  <text class="text" x="900" y="418">Mail register row</text>
+
+  <rect class="box-gray" x="1080" y="360" width="150" height="110" rx="16" />
+  <text class="label" x="1100" y="392">Telegram</text>
+  <text class="text" x="1100" y="418">Executive summary</text>
+
+  <path class="arrow" d="M290 160 L360 160" />
+  <path class="arrow" d="M580 160 L650 115" />
+  <path class="arrow" d="M580 160 L650 225" />
+  <path class="arrow" d="M880 115 L950 155" />
+  <path class="arrow" d="M880 225 L950 185" />
+  <path class="arrow" d="M1060 220 L1060 300 L365 360" />
+  <path class="arrow" d="M1060 220 L1060 300 L685 360" />
+  <path class="arrow" d="M810 415 L880 415" />
+  <path class="arrow" d="M490 415 L1080 415" />
+</svg>

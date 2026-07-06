@@ -1,0 +1,671 @@
+{
+    "id":  "public-workflow-id-ai-mail-assistant",
+    "name":  "Mail Agent",
+    "active":  false,
+    "versionId":  "public-version-id-ai-mail-assistant",
+    "updatedAt":  "2026-06-06 09:32:55.700",
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "downloadAttachments":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.emailReadImap",
+                      "typeVersion":  2.1,
+                      "position":  [
+                                       -1136,
+                                       304
+                                   ],
+                      "id":  "public-node-01",
+                      "name":  "Primary Mailbox Trigger"
+                  },
+                  {
+                      "parameters":  {
+                                         "chatId":  "={{$env.MAIL_AGENT_TELEGRAM_CHAT_ID}}",
+                                         "text":  "={{$json.output[0].content[0].text}}",
+                                         "additionalFields":  {
+                                                                  "appendAttribution":  false
+                                                              }
+                                     },
+                      "type":  "n8n-nodes-base.telegram",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       576,
+                                       192
+                                   ],
+                      "id":  "public-node-02",
+                      "name":  "Send Executive Summary",
+                      "webhookId":  "public-webhook-id-ai-mail-assistant"
+                  },
+                  {
+                      "parameters":  {
+                                         "modelId":  {
+                                                         "__rl":  true,
+                                                         "value":  "gpt-5.4-mini",
+                                                         "mode":  "list",
+                                                         "cachedResultName":  "GPT-5.4-MINI"
+                                                     },
+                                         "responses":  {
+                                                           "values":  [
+                                                                          {
+                                                                              "content":  "=РўС‹ вЂ” AI-СЃРµРєСЂРµС‚Р°СЂСЊ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ Рё РїРѕРјРѕС‰РЅРёРє СЃРѕР±СЃС‚РІРµРЅРЅРёРєР° Р±РёР·РЅРµСЃР°.\nРџРµСЂРµРґ Р°РЅР°Р»РёР·РѕРј РґРѕРєСѓРјРµРЅС‚Р° СЃРЅР°С‡Р°Р»Р° РёР·РІР»РµРєРё Рё РІС‹РІРµРґРё:\n\nРћС‚ РєРѕРіРѕ = from\nРўРµРјР° = subject\nР”Р°С‚Р° РїРёСЃСЊРјР° = email_date РёР»Рё date\n\nРўРѕР»СЊРєРѕ РїРѕСЃР»Рµ СЌС‚РѕРіРѕ Р°РЅР°Р»РёР·РёСЂСѓР№ РІР»РѕР¶РµРЅРёРµ.\n\n\nРџСЂРѕР°РЅР°Р»РёР·РёСЂСѓР№ РІС…РѕРґСЏС‰РµРµ РїРёСЃСЊРјРѕ Рё РІСЃРµ РґРѕСЃС‚СѓРїРЅС‹Рµ РґР°РЅРЅС‹Рµ РёР· РІР»РѕР¶РµРЅРёСЏ. РўРІРѕСЏ Р·Р°РґР°С‡Р° вЂ” РґР°С‚СЊ РєСЂР°С‚РєСѓСЋ СѓРїСЂР°РІР»РµРЅС‡РµСЃРєСѓСЋ СЃРІРѕРґРєСѓ: С‡С‚Рѕ РїСЂРёС€Р»Рѕ, РѕС‚ РєРѕРіРѕ, Р·Р°С‡РµРј, С‡С‚Рѕ РІР°Р¶РЅРѕ, С‡С‚Рѕ РЅСѓР¶РЅРѕ СЃРґРµР»Р°С‚СЊ Рё РµСЃС‚СЊ Р»Рё СЂРёСЃРєРё.\n\nРћР‘РЇР—РђРўР•Р›Р¬РќРћ РёСЃРїРѕР»СЊР·СѓР№ РІСЃРµ РґРѕСЃС‚СѓРїРЅС‹Рµ РґР°РЅРЅС‹Рµ:\n- РѕС‚РїСЂР°РІРёС‚РµР»СЊ РїРёСЃСЊРјР°: from / email / РёРјСЏ РѕС‚РїСЂР°РІРёС‚РµР»СЏ;\n- С‚РµРјР° РїРёСЃСЊРјР°: subject;\n- РґР°С‚Р° РїРёСЃСЊРјР°: date;\n- С‚РµРєСЃС‚ РїРёСЃСЊРјР°: body / text / html / textPlain;\n- СЃРѕРґРµСЂР¶РёРјРѕРµ РІР»РѕР¶РµРЅРёСЏ: PDF, Excel/XLSX, С‚Р°Р±Р»РёС†Р°, РґРѕРєСѓРјРµРЅС‚, СЂР°СЃС‡С‘С‚, СЃС‡С‘С‚, РѕС‚С‡С‘С‚.\nРљР РРўРР§Р•РЎРљР Р’РђР–РќРћ:\n\nРџРµСЂРµРґ Р°РЅР°Р»РёР·РѕРј РґРѕРєСѓРјРµРЅС‚Р° РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РёР·РІР»РµРєРё Рё РёСЃРїРѕР»СЊР·СѓР№ РїРѕР»СЏ РїРёСЃСЊРјР°:\n\nFROM в†’ РѕС‚РїСЂР°РІРёС‚РµР»СЊ\nSUBJECT в†’ С‚РµРјР° РїРёСЃСЊРјР°\nDATE в†’ РґР°С‚Р° РїРёСЃСЊРјР°\n\nР•СЃР»Рё РЅР°Р№РґРµРЅ email РѕС‚РїСЂР°РІРёС‚РµР»СЏ:\n- РЅРёРєРѕРіРґР° РЅРµ РїРёС€Рё \"РќРµ СѓРєР°Р·Р°РЅРѕ\"\n- РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РІС‹РІРµРґРё email РѕС‚РїСЂР°РІРёС‚РµР»СЏ\n- РµСЃР»Рё РїСЂРёСЃСѓС‚СЃС‚РІСѓРµС‚ РёРјСЏ РѕС‚РїСЂР°РІРёС‚РµР»СЏ, РІС‹РІРѕРґРё:\n  РРјСЏ \u003cemail\u003e\n- РµСЃР»Рё РёРјРµРЅРё РЅРµС‚:\n  С‚РѕР»СЊРєРѕ email\n\nР•СЃР»Рё РЅР°Р№РґРµРЅР° С‚РµРјР° РїРёСЃСЊРјР°:\n- РЅРёРєРѕРіРґР° РЅРµ РїРёС€Рё \"РќРµ СѓРєР°Р·Р°РЅРѕ\"\n- РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РІС‹РІРµРґРё С‚РµРјСѓ РїРёСЃСЊРјР°\n\nР•СЃР»Рё РЅР°Р№РґРµРЅР° РґР°С‚Р° РїРёСЃСЊРјР°:\n- РЅРёРєРѕРіРґР° РЅРµ РїРёС€Рё \"РќРµ СѓРєР°Р·Р°РЅРѕ\"\n- РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РІС‹РІРµРґРё РґР°С‚Сѓ РїРёСЃСЊРјР°\n\nРўРµРєСЃС‚ РїРёСЃСЊРјР° РёРјРµРµС‚ РїСЂРёРѕСЂРёС‚РµС‚ РЅР°Рґ РІР»РѕР¶РµРЅРёРµРј.\n\nРЎРЅР°С‡Р°Р»Р° Р°РЅР°Р»РёР·РёСЂСѓР№:\n1. РѕС‚РїСЂР°РІРёС‚РµР»СЏ\n2. С‚РµРјСѓ\n3. РґР°С‚Сѓ\n4. С‚РµРєСЃС‚ РїРёСЃСЊРјР°\n\nРўРѕР»СЊРєРѕ РїРѕСЃР»Рµ СЌС‚РѕРіРѕ Р°РЅР°Р»РёР·РёСЂСѓР№ РІР»РѕР¶РµРЅРёРµ.\n\nР•СЃР»Рё РІ С‚РµРєСЃС‚Рµ РїРёСЃСЊРјР° РµСЃС‚СЊ РїРѕСЂСѓС‡РµРЅРёРµ, РІРѕРїСЂРѕСЃ, РїСЂРѕСЃСЊР±Р°, РєРѕРјРјРµРЅС‚Р°СЂРёР№ РёР»Рё РѕР¶РёРґР°РЅРёРµ РѕС‚РІРµС‚Р° вЂ” РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РѕС‚СЂР°Р·Рё СЌС‚Рѕ РІ СЂР°Р·РґРµР»Рµ \"Р§С‚Рѕ СЃРґРµР»Р°С‚СЊ\".\n\nР•СЃР»Рё РёРЅС„РѕСЂРјР°С†РёСЏ РµСЃС‚СЊ РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ РІ РїРёСЃСЊРјРµ Рё РІРѕ РІР»РѕР¶РµРЅРёРё вЂ” РёСЃРїРѕР»СЊР·СѓР№ РѕР±Рµ С‡Р°СЃС‚Рё РёРЅС„РѕСЂРјР°С†РёРё РїСЂРё С„РѕСЂРјРёСЂРѕРІР°РЅРёРё РѕС‚РІРµС‚Р°.\n\nР•СЃР»Рё РїРѕР»Рµ from, subject, date РёР»Рё С‚РµРєСЃС‚ РїРёСЃСЊРјР° РµСЃС‚СЊ РІРѕ РІС…РѕРґСЏС‰РёС… РґР°РЅРЅС‹С… вЂ” РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РёСЃРїРѕР»СЊР·СѓР№ РµРіРѕ РІ РѕС‚РІРµС‚Рµ.\nР•СЃР»Рё РєР°РєРѕРіРѕ-С‚Рѕ РїРѕР»СЏ РЅРµС‚ вЂ” РїРёС€Рё вЂњРќРµ СѓРєР°Р·Р°РЅРѕвЂќ.\nРќРёРєРѕРіРґР° РЅРµ РїСЂРѕСЃРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїСЂРёСЃР»Р°С‚СЊ РїРёСЃСЊРјРѕ, С„Р°Р№Р», from, subject, date РёР»Рё С‚РµРєСЃС‚ РїРѕРІС‚РѕСЂРЅРѕ.\nР’Р°Р¶РЅРѕСЃС‚СЊ РѕРїСЂРµРґРµР»СЏР№ С‚Р°Рє:\n\nрџ”ґ Р’С‹СЃРѕРєР°СЏ:\n- РѕРїР»Р°С‚Р°\n- РЅР°Р»РѕРіРё\n- РґРѕРіРѕРІРѕСЂ\n- РїСЂРµС‚РµРЅР·РёСЏ\n- СЃСѓРґ\n- РіРѕСЃРѕСЂРіР°РЅ\n- С€С‚СЂР°С„\n- РґРµРґР»Р°Р№РЅ РјРµРЅРµРµ 14 РґРЅРµР№\n\nрџџЎ РЎСЂРµРґРЅСЏСЏ:\n- РѕС‚С‡С‘С‚С‹\n- СЂР°СЃС‡С‘С‚С‹\n- СЃРѕРіР»Р°СЃРѕРІР°РЅРёРµ\n- СЂР°Р±РѕС‡РёРµ РґРѕРєСѓРјРµРЅС‚С‹\n\nрџџў РќРёР·РєР°СЏ:\n- РёРЅС„РѕСЂРјР°С†РёРѕРЅРЅС‹Рµ РїРёСЃСЊРјР°\n- СѓРІРµРґРѕРјР»РµРЅРёСЏ\n- СЂР°СЃСЃС‹Р»РєРё\n\nрџљ« РЎРїР°Рј-СЂРёСЃРє:\n- СЂРµРєР»Р°РјР°\n- РјР°СЃСЃРѕРІР°СЏ СЂР°СЃСЃС‹Р»РєР°\nР Р°Р±РѕС‚Р°Р№ С‚РѕР»СЊРєРѕ СЃ С‚РµРјРё РґР°РЅРЅС‹РјРё, РєРѕС‚РѕСЂС‹Рµ СѓР¶Рµ РїРµСЂРµРґР°РЅС‹ РІ workflow.\n\nР•СЃР»Рё СЌС‚Рѕ Excel/С‚Р°Р±Р»РёС†Р° вЂ” Р°РЅР°Р»РёР·РёСЂСѓР№ РІСЃРµ СЃС‚СЂРѕРєРё РєР°Рє РµРґРёРЅСѓСЋ С‚Р°Р±Р»РёС†Сѓ, Р° РЅРµ РєР°Рє РѕС‚РґРµР»СЊРЅС‹Рµ РєСѓСЃРєРё.\nР•СЃР»Рё СЌС‚Рѕ PDF вЂ” Р°РЅР°Р»РёР·РёСЂСѓР№ РёР·РІР»РµС‡С‘РЅРЅС‹Р№ С‚РµРєСЃС‚ PDF.\nР•СЃР»Рё СЌС‚Рѕ СЃС‡С‘С‚ вЂ” РЅР°Р№РґРё СЃСѓРјРјСѓ, РЅР°Р·РЅР°С‡РµРЅРёРµ РїР»Р°С‚РµР¶Р°, СЃСЂРѕРє РѕРїР»Р°С‚С‹, РїРѕР»СѓС‡Р°С‚РµР»СЏ/РѕСЂРіР°РЅРёР·Р°С†РёСЋ.\nР•СЃР»Рё СЌС‚Рѕ РґРѕРіРѕРІРѕСЂ вЂ” РЅР°Р№РґРё СЃС‚РѕСЂРѕРЅС‹, РїСЂРµРґРјРµС‚, РѕР±СЏР·Р°С‚РµР»СЊСЃС‚РІР°, СЃСЂРѕРєРё, РґРµРЅСЊРіРё, СЂРёСЃРєРё.\nР•СЃР»Рё СЌС‚Рѕ РЅР°Р»РѕРіРѕРІС‹Р№ РґРѕРєСѓРјРµРЅС‚ вЂ” РЅР°Р№РґРё РЅР°Р»РѕРіРѕРїР»Р°С‚РµР»СЊС‰РёРєР°, РїРµСЂРёРѕРґ, СЃСѓРјРјСѓ, РЅР°Р»РѕРі, РѕР±СЏР·Р°С‚РµР»СЊСЃС‚РІР° Рё СЂРёСЃРє.\nР•СЃР»Рё СЌС‚Рѕ РѕС‚С‡С‘С‚ вЂ” РІС‹РґРµР»Рё РєР»СЋС‡РµРІС‹Рµ РїРѕРєР°Р·Р°С‚РµР»Рё, РґРёРЅР°РјРёРєСѓ, РІС‹РІРѕРґС‹ Рё РІРѕР·РјРѕР¶РЅС‹Рµ РїСЂРѕР±Р»РµРјС‹.\nР•СЃР»Рё СЌС‚Рѕ СЂРµРєР»Р°РјРЅРѕРµ РїРёСЃСЊРјРѕ РёР»Рё СЃРїР°Рј вЂ” РєРѕСЂРѕС‚РєРѕ РѕС‚РјРµС‚СЊ СЌС‚Рѕ Рё РЅРµ СЂР°Р·РґСѓРІР°Р№ РѕС‚РІРµС‚.\n\nР¤РѕСЂРјР°С‚ РѕС‚РІРµС‚Р° СЃС‚СЂРѕРіРѕ С‚Р°РєРѕР№:\n\n[рџ”ґ/рџџЎ/рџџў/рџљ«] Р’Р°Р¶РЅРѕСЃС‚СЊ: Р’С‹СЃРѕРєР°СЏ / РЎСЂРµРґРЅСЏСЏ / РќРёР·РєР°СЏ / РЎРїР°Рј-Р РёСЃРє\n\nрџ“‚ РљР°С‚РµРіРѕСЂРёСЏ: Р Р°Р±РѕС‚Р° / Р¤РёРЅР°РЅСЃС‹ / РќР°Р»РѕРіРё / Р®СЂРёРґРёС‡РµСЃРєРѕРµ / Р“РѕСЃРѕСЂРіР°РЅС‹ / Р‘Р°РЅРє / РћС‚С‡С‘С‚ / РЎС‡С‘С‚ РЅР° РѕРїР»Р°С‚Сѓ / Р”РѕРіРѕРІРѕСЂ / Р›РёС‡РЅРѕРµ / Р РµРєР»Р°РјР° / РЎРїР°Рј-Р РёСЃРє\nРћР‘РЇР—РђРўР•Р›Р¬РќРћ РёСЃРїРѕР»СЊР·СѓР№ РїРѕР»СЏ РїРёСЃСЊРјР°, РµСЃР»Рё РѕРЅРё РїСЂРёСЃСѓС‚СЃС‚РІСѓСЋС‚ РІРѕ РІС…РѕРґСЏС‰РёС… РґР°РЅРЅС‹С….\n\nРџРѕР»СЏ:\n- from\n- subject\n- date\n- email_date\n\nР—Р°РїРѕР»РЅСЏР№ Р±Р»РѕРєРё СЃР»РµРґСѓСЋС‰РёРј РѕР±СЂР°Р·РѕРј:\n\nрџ‘¤ РћС‚ РєРѕРіРѕ:\nРёСЃРїРѕР»СЊР·СѓР№ РїРѕР»Рµ from\n\nрџ“Њ РўРµРјР°:\nРёСЃРїРѕР»СЊР·СѓР№ РїРѕР»Рµ subject\n\nрџ“… Р”Р°С‚Р° РїРёСЃСЊРјР°:\nРёСЃРїРѕР»СЊР·СѓР№ РїРѕР»Рµ email_date\nРµСЃР»Рё email_date РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ вЂ” РёСЃРїРѕР»СЊР·СѓР№ date\n\nР—Р°РїСЂРµС‰РµРЅРѕ РїРёСЃР°С‚СЊ \"РќРµ СѓРєР°Р·Р°РЅРѕ\", РµСЃР»Рё РїРѕР»Рµ РїСЂРёСЃСѓС‚СЃС‚РІСѓРµС‚ РІРѕ РІС…РѕРґСЏС‰РёС… РґР°РЅРЅС‹С….\n\nрџ‘¤ РћС‚ РєРѕРіРѕ: РёРјСЏ Рё email РѕС‚РїСЂР°РІРёС‚РµР»СЏ, РµСЃР»Рё РµСЃС‚СЊ. Р•СЃР»Рё РёРјРµРЅРё РЅРµС‚ вЂ” email. Р•СЃР»Рё РґР°РЅРЅС‹С… РЅРµС‚ вЂ” вЂњРќРµ СѓРєР°Р·Р°РЅРѕвЂќ.\n\nрџ“Њ РўРµРјР°: С‚РµРјР° РїРёСЃСЊРјР°, РµСЃР»Рё РµСЃС‚СЊ. Р•СЃР»Рё РЅРµС‚ вЂ” вЂњРќРµ СѓРєР°Р·Р°РЅРѕвЂќ.\n\nрџ“… Р”Р°С‚Р° РїРёСЃСЊРјР°: РґР°С‚Р° РїРёСЃСЊРјР°, РµСЃР»Рё РµСЃС‚СЊ. \n\nрџ“„ РўРёРї РґРѕРєСѓРјРµРЅС‚Р°: С‡С‚Рѕ СЌС‚Рѕ Р·Р° РґРѕРєСѓРјРµРЅС‚\n\nрџЏў РћСЂРіР°РЅРёР·Р°С†РёСЏ / РєРѕРЅС‚СЂР°РіРµРЅС‚: РµСЃР»Рё РјРѕР¶РЅРѕ РѕРїСЂРµРґРµР»РёС‚СЊ\n\nрџ’° РЎСѓРјРјР°: РµСЃР»Рё РµСЃС‚СЊ СЃСѓРјРјС‹\n\nрџ“… Р”Р°С‚Р° / СЃСЂРѕРє: РµСЃР»Рё РµСЃС‚СЊ РґР°С‚Р°, СЃСЂРѕРє РѕРїР»Р°С‚С‹, СЃСЂРѕРє РѕС‚РІРµС‚Р° РёР»Рё РїРµСЂРёРѕРґ\n\nрџ“ќ РЎСѓС‚СЊ: 2вЂ“4 РїСЂРµРґР»РѕР¶РµРЅРёСЏ РїСЂРѕСЃС‚С‹Рј СЏР·С‹РєРѕРј\n\nрџЋЇ Р§С‚Рѕ СЃРґРµР»Р°С‚СЊ: РєРѕРЅРєСЂРµС‚РЅРѕРµ РґРµР№СЃС‚РІРёРµ РґР»СЏ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ\n\nвљ пёЏ Р РёСЃРє: С‡С‚Рѕ Р±СѓРґРµС‚, РµСЃР»Рё РїСЂРѕРёРіРЅРѕСЂРёСЂРѕРІР°С‚СЊ\n\nвњ… РљСЂР°С‚РєРёР№ РІС‹РІРѕРґ: РѕРґРЅР° С„СЂР°Р·Р°, С‡С‚Рѕ СЌС‚Рѕ Р·РЅР°С‡РёС‚ РґР»СЏ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ\n\nР”Р°РЅРЅС‹Рµ РґР»СЏ Р°РЅР°Р»РёР·Р°:\n{{ JSON.stringify($json, null, 2) }}"
+                                                                          }
+                                                                      ]
+                                                       },
+                                         "builtInTools":  {
+
+                                                          },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.openAi",
+                      "typeVersion":  2.3,
+                      "position":  [
+                                       64,
+                                       336
+                                   ],
+                      "id":  "public-node-03",
+                      "name":  "Generate Executive Summary"
+                  },
+                  {
+                      "parameters":  {
+                                         "downloadAttachments":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.emailReadImap",
+                      "typeVersion":  2.1,
+                      "position":  [
+                                       -1136,
+                                       176
+                                   ],
+                      "id":  "public-node-04",
+                      "name":  "Secondary Mailbox Trigger"
+                  },
+                  {
+                      "parameters":  {
+                                         "downloadAttachments":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.emailReadImap",
+                      "typeVersion":  2.1,
+                      "position":  [
+                                       -1136,
+                                       48
+                                   ],
+                      "id":  "public-node-05",
+                      "name":  "Gmail Trigger"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "xlsx",
+                                         "binaryPropertyName":  "attachment_0",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.extractFromFile",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -400,
+                                       16
+                                   ],
+                      "id":  "public-node-06",
+                      "name":  "Extract Excel Attachment"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "pdf",
+                                         "binaryPropertyName":  "attachment_0",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.extractFromFile",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -384,
+                                       368
+                                   ],
+                      "id":  "public-node-07",
+                      "name":  "Extract PDF Attachment"
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  3
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "public-condition-id-01",
+                                                                                   "leftValue":  "={{$binary.attachment_0.mimeType}}",
+                                                                                   "rightValue":  "spreadsheet",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "contains"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.3,
+                      "position":  [
+                                       -640,
+                                       112
+                                   ],
+                      "id":  "public-node-08",
+                      "name":  "Is Spreadsheet Attachment?"
+                  },
+                  {
+                      "parameters":  {
+                                         "aggregate":  "aggregateAllItemData",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.aggregate",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -272,
+                                       16
+                                   ],
+                      "id":  "public-node-09",
+                      "name":  "Aggregate Spreadsheet Rows"
+                  },
+                  {
+                      "parameters":  {
+                                         "assignments":  {
+                                                             "assignments":  [
+                                                                                 {
+                                                                                     "id":  "email-date",
+                                                                                     "name":  "email_date",
+                                                                                     "value":  "={{$json.date}}",
+                                                                                     "type":  "string"
+                                                                                 }
+                                                                             ]
+                                                         },
+                                         "includeOtherFields":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  3.4,
+                      "position":  [
+                                       -944,
+                                       176
+                                   ],
+                      "id":  "public-node-10",
+                      "name":  "Normalize Email Fields"
+                  },
+                  {
+                      "parameters":  {
+                                         "modelId":  {
+                                                         "__rl":  true,
+                                                         "value":  "gpt-5.4-mini",
+                                                         "mode":  "list",
+                                                         "cachedResultName":  "GPT-5.4-MINI"
+                                                     },
+                                         "responses":  {
+                                                           "values":  [
+                                                                          {
+                                                                              "content":  "=РўС‹ РїРѕРјРѕС‰РЅРёРє РїРѕ СЂРµРіРёСЃС‚СЂР°С†РёРё РІС…РѕРґСЏС‰РёС… РїРёСЃРµРј Рё РґРѕРєСѓРјРµРЅС‚РѕРІ.\n\nРџСЂРѕР°РЅР°Р»РёР·РёСЂСѓР№ РїРёСЃСЊРјРѕ Рё РІР»РѕР¶РµРЅРёРµ, Р·Р°С‚РµРј РІРµСЂРЅРё С‚РѕР»СЊРєРѕ РІР°Р»РёРґРЅС‹Р№ JSON Р±РµР· markdown Рё РїРѕСЏСЃРЅРµРЅРёР№.\n\nР¤РѕСЂРјР°С‚ РѕС‚РІРµС‚Р°:\n{\n  \"Date\": \"\",\n  \"From\": \"\",\n  \"Subject\": \"\",\n  \"Category\": \"\",\n  \"Priority\": \"\",\n  \"DocumentType\": \"\",\n  \"Organization\": \"\",\n  \"Amount\": \"\",\n  \"Summary\": \"\",\n  \"Deadline\": \"\",\n  \"Status\": \"\",\n  \"ReplyStatus\": \"\",\n  \"WorkStatus\": \"\",\n  \"Comment\": \"\"\n}\n\nРџСЂР°РІРёР»Р°:\n- Date: РёСЃРїРѕР»СЊР·СѓР№ email_date, РµСЃР»Рё РµРіРѕ РЅРµС‚ - date.\n- From: РёСЃРїРѕР»СЊР·СѓР№ РїРѕР»Рµ from.\n- Subject: РёСЃРїРѕР»СЊР·СѓР№ РїРѕР»Рµ subject.\n- Category: РѕРґРЅРѕ РёР· Р·РЅР°С‡РµРЅРёР№ РќР°Р»РѕРіРё, Р“РѕСЃРѕСЂРіР°РЅС‹, Р¤РёРЅР°РЅСЃС‹, Р”РѕРіРѕРІРѕСЂ, РЎС‡РµС‚, РћС‚С‡РµС‚, Р›РёС‡РЅРѕРµ, РЎРїР°Рј, РџСЂРѕС‡РµРµ.\n- Priority: С‚РѕР»СЊРєРѕ Р’С‹СЃРѕРєР°СЏ, РЎСЂРµРґРЅСЏСЏ РёР»Рё РќРёР·РєР°СЏ.\n- DocumentType: РєСЂР°С‚РєРёР№ С‚РёРї РґРѕРєСѓРјРµРЅС‚Р°.\n- Organization: РѕСЂРіР°РЅРёР·Р°С†РёСЏ РёР»Рё РєРѕРЅС‚СЂР°РіРµРЅС‚.\n- Amount: СЃСѓРјРјР°, РµСЃР»Рё РµСЃС‚СЊ, РёРЅР°С‡Рµ РїСѓСЃС‚Р°СЏ СЃС‚СЂРѕРєР°.\n- Summary: РєСЂР°С‚РєРёР№ СЃРјС‹СЃР» РїРёСЃСЊРјР° РґРѕ 20 СЃР»РѕРІ.\n- Deadline: Р±Р»РёР¶Р°Р№С€РёР№ СЃСЂРѕРє РІ С„РѕСЂРјР°С‚Рµ YYYY-MM-DD, РµСЃР»Рё РµСЃС‚СЊ.\n- Status: РќРѕРІРѕРµ, Р’ СЂР°Р±РѕС‚Рµ РёР»Рё Р—Р°РІРµСЂС€РµРЅРѕ.\n- ReplyStatus: РќСѓР¶РЅРѕ РѕС‚РІРµС‚РёС‚СЊ, Р–РґС‘Рј РѕС‚РІРµС‚ РёР»Рё РћС‚РІРµС‚ РЅРµ С‚СЂРµР±СѓРµС‚СЃСЏ.\n- WorkStatus: РќРѕРІРѕРµ, Р’ СЂР°Р±РѕС‚Рµ, РќР° РєРѕРЅС‚СЂРѕР»Рµ РёР»Рё Р—Р°РІРµСЂС€РµРЅРѕ.\n- Comment: РєРѕСЂРѕС‚РєРёР№ СЂР°Р±РѕС‡РёР№ РєРѕРјРјРµРЅС‚Р°СЂРёР№.\n\nР•СЃР»Рё РґР°РЅРЅС‹С… РЅРµС‚, РѕСЃС‚Р°РІР»СЏР№ РїСѓСЃС‚СѓСЋ СЃС‚СЂРѕРєСѓ.\nР’РµСЂРЅРё С‚РѕР»СЊРєРѕ С‡РёСЃС‚С‹Р№ JSON.\n\nР”Р°РЅРЅС‹Рµ РґР»СЏ Р°РЅР°Р»РёР·Р°:\n{{ JSON.stringify($json, null, 2) }}"
+                                                                          }
+                                                                      ]
+                                                       },
+                                         "builtInTools":  {
+
+                                                          },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.openAi",
+                      "typeVersion":  2.3,
+                      "position":  [
+                                       0,
+                                       0
+                                   ],
+                      "id":  "public-node-11",
+                      "name":  "Generate Register JSON"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "append",
+                                         "documentId":  {
+                                                            "__rl":  true,
+                                                            "value":  "REPLACE_WITH_GOOGLE_SHEET_ID",
+                                                            "mode":  "list",
+                                                            "cachedResultName":  "REPLACE_WITH_GOOGLE_SHEET_ID"
+                                                        },
+                                         "sheetName":  {
+                                                           "__rl":  true,
+                                                           "value":  "REPLACE_WITH_SHEET_NAME",
+                                                           "mode":  "list",
+                                                           "cachedResultName":  "REPLACE_WITH_SHEET_NAME"
+                                                       },
+                                         "columns":  {
+                                                         "mappingMode":  "defineBelow",
+                                                         "value":  {
+                                                                       "Date":  "={{$json.Date}}",
+                                                                       "From":  "={{$json.From}}",
+                                                                       "Subject":  "={{$json.Subject}}",
+                                                                       "Category":  "={{$json.Category}}",
+                                                                       "Priority":  "={{$json.Priority}}",
+                                                                       "Document Type":  "={{$json.DocumentType}}",
+                                                                       "Organization":  "={{$json.Organization}}",
+                                                                       "Amount":  "={{$json.Amount}}",
+                                                                       "Summary":  "={{$json.Summary}}",
+                                                                       "Deadline":  "={{$json.Deadline}}",
+                                                                       "Status":  "={{$json.Status}}",
+                                                                       "ReplyStatus":  "={{$json.ReplyStatus}}",
+                                                                       "WorkStatus":  "={{$json.WorkStatus}}",
+                                                                       "Comment":  "={{$json.Comment}}"
+                                                                   },
+                                                         "matchingColumns":  [
+
+                                                                             ],
+                                                         "schema":  [
+                                                                        {
+                                                                            "id":  "Date",
+                                                                            "displayName":  "Date",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "From",
+                                                                            "displayName":  "From",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "Subject",
+                                                                            "displayName":  "Subject",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "Category",
+                                                                            "displayName":  "Category",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "Priority",
+                                                                            "displayName":  "Priority",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "Document Type",
+                                                                            "displayName":  "Document Type",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "Organization",
+                                                                            "displayName":  "Organization",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "Amount",
+                                                                            "displayName":  "Amount",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "Summary",
+                                                                            "displayName":  "Summary",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "Deadline",
+                                                                            "displayName":  "Deadline",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "Status",
+                                                                            "displayName":  "Status",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "ReplyStatus",
+                                                                            "displayName":  "ReplyStatus",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "WorkStatus",
+                                                                            "displayName":  "WorkStatus",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "Comment",
+                                                                            "displayName":  "Comment",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true
+                                                                        }
+                                                                    ],
+                                                         "attemptToConvertTypes":  false,
+                                                         "convertFieldsToString":  false
+                                                     },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4.7,
+                      "position":  [
+                                       448,
+                                       0
+                                   ],
+                      "id":  "public-node-12",
+                      "name":  "Append To Mail Register"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const raw = $input.first().json.output?.[0]?.content?.[0]?.text ?? \u0027\u0027;\nconst cleaned = raw\n  .replace(/^\\s*\\`\\`\\`json/iu, \u0027\u0027)\n  .replace(/^\\s*\\`\\`\\`/u, \u0027\u0027)\n  .replace(/\\`\\`\\`\\s*$/u, \u0027\u0027)\n  .trim();\n\nconst jsonMatch = cleaned.match(/\\{[\\s\\S]*\\}/u);\nconst payload = jsonMatch ? jsonMatch[0] : cleaned;\n\nlet parsed;\ntry {\n  parsed = JSON.parse(payload);\n} catch (error) {\n  parsed = {\n    Date: \u0027\u0027,\n    From: \u0027\u0027,\n    Subject: \u0027\u0027,\n    Category: \u0027РџСЂРѕС‡РµРµ\u0027,\n    Priority: \u0027РЎСЂРµРґРЅСЏСЏ\u0027,\n    DocumentType: \u0027\u0027,\n    Organization: \u0027\u0027,\n    Amount: \u0027\u0027,\n    Summary: \u0027\u0027,\n    Deadline: \u0027\u0027,\n    Status: \u0027РќРѕРІРѕРµ\u0027,\n    ReplyStatus: \u0027РћС‚РІРµС‚ РЅРµ С‚СЂРµР±СѓРµС‚СЃСЏ\u0027,\n    WorkStatus: \u0027РќРѕРІРѕРµ\u0027,\n    Comment: \u0027AI response could not be parsed as JSON\u0027,\n    raw_ai_response: raw,\n  };\n}\n\nreturn [\n  {\n    json: {\n      Date: parsed.Date ?? \u0027\u0027,\n      From: parsed.From ?? \u0027\u0027,\n      Subject: parsed.Subject ?? \u0027\u0027,\n      Category: parsed.Category ?? \u0027РџСЂРѕС‡РµРµ\u0027,\n      Priority: parsed.Priority ?? \u0027РЎСЂРµРґРЅСЏСЏ\u0027,\n      DocumentType: parsed.DocumentType ?? \u0027\u0027,\n      Organization: parsed.Organization ?? \u0027\u0027,\n      Amount: parsed.Amount ?? \u0027\u0027,\n      Summary: parsed.Summary ?? \u0027\u0027,\n      Deadline: parsed.Deadline ?? \u0027\u0027,\n      Status: parsed.Status ?? \u0027РќРѕРІРѕРµ\u0027,\n      ReplyStatus: parsed.ReplyStatus ?? \u0027РћС‚РІРµС‚ РЅРµ С‚СЂРµР±СѓРµС‚СЃСЏ\u0027,\n      WorkStatus: parsed.WorkStatus ?? \u0027РќРѕРІРѕРµ\u0027,\n      Comment: parsed.Comment ?? \u0027\u0027,\n    },\n  },\n];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       304,
+                                       0
+                                   ],
+                      "id":  "public-node-13",
+                      "name":  "Parse Register JSON"
+                  },
+                  {
+                      "parameters":  {
+                                         "numberInputs":  3
+                                     },
+                      "type":  "n8n-nodes-base.merge",
+                      "typeVersion":  3.2,
+                      "position":  [
+                                       -128,
+                                       176
+                                   ],
+                      "id":  "public-node-14",
+                      "name":  "Merge Email And Attachment"
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  3
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "public-condition-id-02",
+                                                                                   "leftValue":  "={{$binary.attachment_0}}",
+                                                                                   "rightValue":  "",
+                                                                                   "operator":  {
+                                                                                                    "type":  "object",
+                                                                                                    "operation":  "exists",
+                                                                                                    "singleValue":  true
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.3,
+                      "position":  [
+                                       -784,
+                                       176
+                                   ],
+                      "id":  "public-node-15",
+                      "name":  "Has Attachment?"
+                  }
+              ],
+    "connections":  {
+                        "Primary Mailbox Trigger":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "Normalize Email Fields",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "Secondary Mailbox Trigger":  {
+                                                          "main":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "Normalize Email Fields",
+                                                                               "type":  "main",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                                      },
+                        "Gmail Trigger":  {
+                                              "main":  [
+                                                           [
+                                                               {
+                                                                   "node":  "Normalize Email Fields",
+                                                                   "type":  "main",
+                                                                   "index":  0
+                                                               }
+                                                           ]
+                                                       ]
+                                          },
+                        "Normalize Email Fields":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Has Attachment?",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "Has Attachment?":  {
+                                                "main":  [
+                                                             [
+                                                                 {
+                                                                     "node":  "Is Spreadsheet Attachment?",
+                                                                     "type":  "main",
+                                                                     "index":  0
+                                                                 }
+                                                             ],
+                                                             [
+                                                                 {
+                                                                     "node":  "Merge Email And Attachment",
+                                                                     "type":  "main",
+                                                                     "index":  1
+                                                                 }
+                                                             ]
+                                                         ]
+                                            },
+                        "Is Spreadsheet Attachment?":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Extract Excel Attachment",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ],
+                                                                        [
+                                                                            {
+                                                                                "node":  "Extract PDF Attachment",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Extract Excel Attachment":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Aggregate Spreadsheet Rows",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "Extract PDF Attachment":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Merge Email And Attachment",
+                                                                            "type":  "main",
+                                                                            "index":  2
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "Aggregate Spreadsheet Rows":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Merge Email And Attachment",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Merge Email And Attachment":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Generate Register JSON",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            },
+                                                                            {
+                                                                                "node":  "Generate Executive Summary",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Generate Executive Summary":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Send Executive Summary",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Generate Register JSON":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Parse Register JSON",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "Parse Register JSON":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Append To Mail Register",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Append To Mail Register":  {
+                                                        "main":  [
+                                                                     [
+
+                                                                     ]
+                                                                 ]
+                                                    }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "binaryMode":  "separate"
+                 },
+    "pinData":  {
+
+                },
+    "tags":  [
+
+             ]
+}

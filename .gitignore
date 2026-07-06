@@ -1,0 +1,26 @@
+# OS and editor noise
+Thumbs.db
+.DS_Store
+
+# Logs and temp files
+*.log
+tmp/
+temp/
+
+# Secrets and local environment files
+.env
+.env.*
+*.pem
+*.key
+
+# Common dependency and build folders
+node_modules/
+dist/
+coverage/
+
+# Local workflow/runtime state
+.n8n/
+
+# Local audit and export folders
+outputs/
+work/

@@ -1,4 +1,4 @@
-# AI Mail Assistant
+# Mail-and-voice-agent
 
 AI Mail Assistant is the public portfolio version of a historical `n8n` workflow named `Mail Agent`.
 

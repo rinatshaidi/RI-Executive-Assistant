@@ -1,0 +1,807 @@
+{
+  "name": "Mail Brief — template",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 1 * * *"
+            }
+          ]
+        }
+      },
+      "id": "dailycollectionschedule_zqld0p",
+      "name": "Daily collection schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=newer_than:3d&maxResults=50",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "id": "listgmailmessages_s7nt3o",
+      "name": "List Gmail messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "messages",
+        "options": {}
+      },
+      "id": "splitgmailmessageids_y8v92l",
+      "name": "Split Gmail message IDs",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        656,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{'https://gmail.googleapis.com/gmail/v1/users/me/messages/'+$json.id+'?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date'}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "id": "readgmailmetadata_9fnnza",
+      "name": "Read Gmail metadata",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "source",
+              "name": "source",
+              "value": "Gmail",
+              "type": "string"
+            },
+            {
+              "id": "receivedAt",
+              "name": "receivedAt",
+              "value": "={{$json.payload.headers.find(h => h.name === 'Date')?.value || $now.toISO()}}",
+              "type": "string"
+            },
+            {
+              "id": "from",
+              "name": "from",
+              "value": "={{$json.payload.headers.find(h => h.name === 'From')?.value || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "name": "subject",
+              "value": "={{$json.payload.headers.find(h => h.name === 'Subject')?.value || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "briefDate",
+              "name": "briefDate",
+              "value": "={{DateTime.fromRFC2822($json.payload.headers.find(h => h.name === 'Date')?.value || '').setZone('Europe/Moscow').toFormat('yyyy-MM-dd')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalizegmailmessage_l0hp0j",
+      "name": "Normalize Gmail message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1104,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "source",
+              "name": "source",
+              "value": "Yandex IMAP account",
+              "type": "string"
+            },
+            {
+              "id": "receivedAt",
+              "name": "receivedAt",
+              "value": "={{$json.date || $now.toISO()}}",
+              "type": "string"
+            },
+            {
+              "id": "from",
+              "name": "from",
+              "value": "={{$json.from?.value?.[0]?.address || $json.from?.text || $json.from || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "name": "subject",
+              "value": "={{$json.subject || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "briefDate",
+              "name": "briefDate",
+              "value": "={{$now.setZone('Europe/Moscow').toFormat('yyyy-MM-dd')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalizeyandexmessage_fpq4c6",
+      "name": "Normalize Yandex message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "imaprshaidimailru_ll7zwb",
+      "name": "IMAP — Mail.ru IMAP account 1",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "source",
+              "name": "source",
+              "value": "Mail.ru IMAP account 1",
+              "type": "string"
+            },
+            {
+              "id": "receivedAt",
+              "name": "receivedAt",
+              "value": "={{$json.date || $now.toISO()}}",
+              "type": "string"
+            },
+            {
+              "id": "from",
+              "name": "from",
+              "value": "={{$json.from?.value?.[0]?.address || $json.from?.text || $json.from || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "name": "subject",
+              "value": "={{$json.subject || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "briefDate",
+              "name": "briefDate",
+              "value": "={{$now.setZone('Europe/Moscow').toFormat('yyyy-MM-dd')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalizershaidimailru_effnzi",
+      "name": "Normalize Mail.ru IMAP account 1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "imaprinatfsinmailru_r2gi8r",
+      "name": "IMAP — Mail.ru IMAP account 2",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "source",
+              "name": "source",
+              "value": "Mail.ru IMAP account 2",
+              "type": "string"
+            },
+            {
+              "id": "receivedAt",
+              "name": "receivedAt",
+              "value": "={{$json.date || $now.toISO()}}",
+              "type": "string"
+            },
+            {
+              "id": "from",
+              "name": "from",
+              "value": "={{$json.from?.value?.[0]?.address || $json.from?.text || $json.from || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "name": "subject",
+              "value": "={{$json.subject || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "briefDate",
+              "name": "briefDate",
+              "value": "={{$now.setZone('Europe/Moscow').toFormat('yyyy-MM-dd')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalizerinatfsinmailru_hxsdxq",
+      "name": "Normalize Mail.ru IMAP account 2",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_DATA_TABLE_ID",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "source": "={{$json.source}}",
+            "receivedAt": "={{$json.receivedAt}}",
+            "from": "={{$json.from}}",
+            "subject": "={{$json.subject}}",
+            "briefDate": "={{$json.briefDate}}"
+          },
+          "schema": [
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "receivedAt",
+              "displayName": "receivedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "date",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "from",
+              "displayName": "from",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "briefDate",
+              "displayName": "briefDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "storemessagemetadata_2pt6i9",
+      "name": "Store message metadata",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "5 1 * * *"
+            }
+          ]
+        }
+      },
+      "id": "dailymailbriefschedule_qwvqlu",
+      "name": "Daily Mail Brief schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        224
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "manualbrieftest_53mhps",
+      "name": "Manual brief test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        160,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "targetDate",
+              "name": "targetDate",
+              "value": "={{$now.setZone('Europe/Moscow').minus({days: 1}).toFormat('yyyy-MM-dd')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "preparetargetdate_jnf9h3",
+      "name": "Prepare target date",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_DATA_TABLE_ID",
+          "mode": "id"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "briefDate",
+              "keyValue": "={{$json.targetDate}}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "getyesterdaymessages_e6btx5",
+      "name": "Get yesterday messages",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "messages",
+        "options": {}
+      },
+      "id": "aggregatemessages_r7ot2q",
+      "name": "Aggregate messages",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        880,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.4-mini-2026-03-17",
+          "mode": "list",
+          "cachedResultName": "GPT-5.4-MINI-2026-03-17"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Ты формируешь личный утренний почтовый бриф на русском. Дата: {{ $node['Prepare target date'].json.targetDate }}. Используй только поля отправитель и тема из списка писем: {{ JSON.stringify($json.messages) }}. Верни только готовый текст для Telegram, без вступлений и Markdown-таблиц. Строго формат: 📬 Почта за ДД.ММ.ГГГГ\n\n🔴 Требуют реакции сегодня — N\n• Отправитель — тема\n\n🟡 На этой неделе — N\n• Отправитель — тема\n\n⚪ Прочее\nN рассылок · N уведомлений · N рекламных. Красная категория: деньги, банк, налоги, договоры, госорганы, безопасность, дедлайны, здоровье или семья. Жёлтая: рабочие задачи, документы, клиенты, встречи. Не пересказывай тела писем, не выдумывай факты. Если категории пусты, укажи 0. Не включай полный email, если можно назвать организацию или имя."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "classifyandformatbrief_dr65yj",
+      "name": "Classify and format brief",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ $json.output[0].content[0].text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "sendmailbrieftoriassista_e3970t",
+      "name": "Send Mail Brief to RI Assistant",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1376,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_DATA_TABLE_ID",
+          "mode": "id"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "briefDate",
+              "keyValue": "={{$node['Prepare target date'].json.targetDate}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "removesentrows_lrvmqp",
+      "name": "Remove sent rows",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1632,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Mail Brief → RI Assistant\n\nFour connected mailboxes feed one metadata-only internal queue. At 08:05 Moscow the workflow classifies **yesterday’s** subjects and sends one Telegram brief to RI Assistant.\n\nNo Google Sheets, no email bodies or attachments. The fifth mailbox `optional additional mailbox` is intentionally outside the workflow until its VK ID confirmation and app password are complete.",
+        "height": 150,
+        "width": 1540
+      },
+      "id": "mailbriefoverview_3mqsaj",
+      "name": "Mail Brief overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        944
+      ]
+    },
+    {
+      "id": "keepgmailyesterday_6m7k",
+      "name": "Keep Gmail messages from yesterday",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "gmail-yesterday",
+              "leftValue": "={{$json.briefDate}}",
+              "rightValue": "={{$now.setZone('Europe/Moscow').minus({days: 1}).toFormat('yyyy-MM-dd')}}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "imapyandex_4m98s",
+      "name": "IMAP — Yandex IMAP account",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        440
+      ],
+      "parameters": {
+        "downloadAttachments": false,
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Daily collection schedule": {
+      "main": [
+        [
+          {
+            "node": "List Gmail messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Gmail messages": {
+      "main": [
+        [
+          {
+            "node": "Split Gmail message IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Gmail message IDs": {
+      "main": [
+        [
+          {
+            "node": "Read Gmail metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Gmail metadata": {
+      "main": [
+        [
+          {
+            "node": "Normalize Gmail message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Gmail message": {
+      "main": [
+        [
+          {
+            "node": "Keep Gmail messages from yesterday",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Yandex message": {
+      "main": [
+        [
+          {
+            "node": "Store message metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IMAP — Mail.ru IMAP account 1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Mail.ru IMAP account 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Mail.ru IMAP account 1": {
+      "main": [
+        [
+          {
+            "node": "Store message metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IMAP — Mail.ru IMAP account 2": {
+      "main": [
+        [
+          {
+            "node": "Normalize Mail.ru IMAP account 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Mail.ru IMAP account 2": {
+      "main": [
+        [
+          {
+            "node": "Store message metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Mail Brief schedule": {
+      "main": [
+        [
+          {
+            "node": "Prepare target date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual brief test": {
+      "main": [
+        [
+          {
+            "node": "Prepare target date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare target date": {
+      "main": [
+        [
+          {
+            "node": "Get yesterday messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get yesterday messages": {
+      "main": [
+        [
+          {
+            "node": "Aggregate messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate messages": {
+      "main": [
+        [
+          {
+            "node": "Classify and format brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify and format brief": {
+      "main": [
+        [
+          {
+            "node": "Send Mail Brief to RI Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Mail Brief to RI Assistant": {
+      "main": [
+        [
+          {
+            "node": "Remove sent rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Gmail messages from yesterday": {
+      "main": [
+        [
+          {
+            "node": "Store message metadata",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "IMAP — Yandex IMAP account": {
+      "main": [
+        [
+          {
+            "node": "Normalize Yandex message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

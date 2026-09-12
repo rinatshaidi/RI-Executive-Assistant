@@ -1,0 +1,20 @@
+services:
+  imap-status-tracker:
+    build: .
+    container_name: imap-status-tracker
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/data
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - default
+      - mail_brief_n8n
+networks:
+  mail_brief_n8n:
+    external: true
+    name: mail-brief_n8n

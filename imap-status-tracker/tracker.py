@@ -6,6 +6,7 @@ import hmac
 import imaplib
 import json
 import os
+import re
 import sqlite3
 import threading
 from datetime import datetime, time, timedelta, timezone
@@ -54,7 +55,7 @@ def db():
 
 
 def source_config(source):
-    key = "IMAP_" + source.upper().replace("-", "_").replace(" ", "_")
+    key = "IMAP_" + re.sub(r"[^A-Z0-9]+", "_", source.upper()).strip("_")
     values = {name: os.getenv(f"{key}_{name}", "") for name in ("HOST", "PORT", "USER", "PASSWORD")}
     if not all(values.values()):
         raise ValueError(f"IMAP configuration for source '{source}' is missing")

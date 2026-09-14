@@ -12,6 +12,7 @@ The project contains public-safe workflow templates only. It never includes mail
 - Keeps only the source, received date, sender, subject, and processing date. It does not store message bodies or attachments.
 - At 08:05 Moscow time, sends one Telegram briefing for the preceding day.
 - Groups messages into 🔴 requires attention today, 🟡 this week, and ⚪ other.
+- Shows the source mailbox under each red or yellow item, so the user knows where to act. The source is intentionally omitted from ⚪ other.
 - Deletes the sent-day queue rows after delivery, preventing duplicate briefs.
 - Does not use Google Sheets.
 
@@ -22,7 +23,9 @@ Example output:
 
 🔴 Требуют реакции сегодня — 2
 • Банк — подтвердить платёж до 15:00
+  📬 work-mail@example.com
 • Клиника — требуется ответ
+  📬 personal-mail@example.com
 
 🟡 На этой неделе — 1
 • Клиент — согласование документа
@@ -54,6 +57,7 @@ mail-assistant/
 │   ├── mail-brief.workflow.json
 │   └── ai-mail-assistant.workflow.json
 ├── docs/
+│   └── voice-calendar-next.md
 └── README.md
 ```
 

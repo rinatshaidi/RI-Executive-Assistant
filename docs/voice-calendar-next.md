@@ -1,51 +1,165 @@
-# Voice Calendar — next workflow revision
+# RI Assistant — voice calendar and notes implementation
 
-This document describes the next revision of the personal Telegram voice-calendar flow. It is deliberately a specification, not a production export: live n8n exports contain instance-specific credential references and must stay outside Git.
+This file is the implementation contract for the next working revision of the
+Telegram assistant. It deliberately contains no bot token, OAuth credential,
+Google Doc ID, or other private identifiers. The live n8n workflow keeps those
+values in credentials or workflow configuration only.
 
-## Accepted voice intents
+## Scope of this release
 
-1. **Timed event**
-   Example: “Tomorrow at 15:00, meeting with Ivan for 30 minutes.”
-   Create one normal Google Calendar event in Europe/Moscow.
+- Telegram is the voice-first interface.
+- The assistant understands natural Russian speech for calendar actions and
+  voice notes.
+- Every completed action returns a short text audit line. For a successful
+  calendar change or saved note it also returns a brief voice response.
+- Google Calendar remains the source of truth for timed events and all-day
+  tasks.
+- Google Docs stores raw voice notes in one rolling monthly document; the VPS
+  does not store note text.
+- Morning agenda is sent at 08:00 Europe/Moscow and explicitly reports an
+  empty calendar.
+- Siri, Apple Notes and background Telegram reminders are outside this
+  release. Calendar-native notifications remain enabled on the user's devices.
 
-2. **Tasks in free slots**
-   Example: “Tomorrow from 08:00 to 10:00, distribute: call Ivan, prepare documents, pay the invoice.”
-   Read the calendar inside the requested window, exclude busy events, then create tasks sequentially in available gaps. A task with no specified duration receives 30 minutes. If the available time is insufficient, create only the tasks that fit and state that the remaining tasks were not scheduled.
+## Intent contract
 
-3. **All-day task**
-   Example: “Tomorrow, buy paint during the day.”
-   Create a real all-day Google Calendar event using start.date and end.date, with transparency: transparent. It must not occupy a timed free slot and must sync to Apple Calendar as an all-day item.
+The AI extraction node must return one JSON object and must never perform a
+Calendar change itself.
 
-4. **Cancellation**
-   Example: “Never mind, do not add anything.”
-   Do not create an event; return one brief acknowledgement.
+```json
+{
+  "intent": "create_timed_event | create_all_day_task | plan_tasks | relocate_event | choose_option | cancel | save_note | search_notes | unknown",
+  "confidence": 0.0,
+  "referenceDate": "YYYY-MM-DD",
+  "title": "string or null",
+  "start": "RFC3339 or null",
+  "end": "RFC3339 or null",
+  "durationMinutes": 30,
+  "date": "YYYY-MM-DD or null",
+  "tasks": [{"title": "string", "durationMinutes": 30, "location": "string or null"}],
+  "window": {"start": "RFC3339", "end": "RFC3339"},
+  "targetDescription": "string or null",
+  "requestedTime": "RFC3339 or null",
+  "noteText": "string or null",
+  "spokenReply": "string"
+}
+```
 
-## Morning agenda presentation
+Rules:
 
-Timed events are listed as HH:mm — title. All-day tasks are grouped separately:
+- If the user says "отбой", "не надо", "отмени создание", return `cancel`.
+  No Calendar write is allowed.
+- A task "в течение дня" becomes a Calendar all-day event with
+  `start.date`, `end.date` (next day), and `transparency: transparent`.
+- Ambiguity always produces a voice clarification. It never creates or moves
+  an event based on a guess.
+- For `plan_tasks`, the response is a proposal until the user says
+  "подтверждаю" or names an offered option.
 
-    ☀️ План на 14.09
+## n8n flow
 
-    10:00 — Звонок
-    15:00 — Совещание
+### 1. Receive and acknowledge
 
-    📌 В течение дня
-    • Купить краску
+1. **Telegram Trigger** listens for voice messages, text commands and callback
+   queries from the RI Assistant bot.
+2. **Callback acknowledgement** is the first node on every callback branch:
+   call Telegram `answerCallbackQuery` immediately. This clears the Telegram
+   spinner before Calendar work starts.
+3. Voice messages use `getFile` -> speech-to-text. Text commands bypass
+   transcription.
+4. A single AI extraction node receives the transcript, current Moscow date,
+   and active conversation state.
 
-If the calendar is empty, the message remains explicit:
+### 2. Create / plan / move
 
-    ☀️ План на 14.09
+5. **Create timed event:** validate the supplied date-time in Europe/Moscow,
+   create the Calendar event, then send a TTS voice response and the text
+   audit line, for example: `Создано: Встреча — 17.09, 10:00–10:30.`
+6. **All-day task:** create the transparent all-day Calendar event, then
+   report: `Добавлено на 17.09: купить краску.`
+7. **Plan several tasks:** get events for the requested window, call
+   `personal-day-planner /v1/plan`, and return the proposed slots with buttons
+   `Подтвердить план` and `Изменить`. Only confirmation creates events.
+8. **Move event:** search Calendar by a narrow date interval and title. For
+   an exact requested time, update after identifying one event. Otherwise call
+   `/v1/relocation-options`, send up to three voice and button options, and
+   save the selected event ID and options in short-lived n8n state.
+9. **Cancel:** clear only pending state and answer `Ничего не добавляю.`
+   It does not delete an existing Calendar event unless the request names an
+   existing event and is confirmed by the user.
 
-    На сегодня запланированных мероприятий нет.
+### 3. Notes
 
-## Acceptance checks
+10. **Save note:** append the full transcript to the current monthly Google
+    Doc with date/time and category. Reply: `Заметка сохранена.`
+11. **Search notes:** query the monthly Google Doc; if no exact text is found,
+    say so rather than inventing a result.
+12. **Turn note into task:** read the target note, create either an all-day
+    task or a proposal depending on the spoken request, then keep the source
+    note unchanged.
 
-- A multi-task request never overlaps an opaque calendar event.
-- A task labelled “during the day” is an actual all-day event, not a midnight timed event.
-- All generated date-times use Europe/Moscow.
-- The response shows the created slots in one compact Telegram message.
-- The deployment test uses an actual voice message and verifies both Google Calendar and Telegram output.
+### 4. Replies and buttons
 
-## Current delivery state
+- Text is the authoritative audit trail.
+- TTS is sent only after successful state change. If TTS fails, send the text
+  line and record an n8n execution warning; do not retry the Calendar write.
+- Buttons use compact callback data carrying an action and a short opaque
+  state key. Callback data must not expose titles, calendar IDs, note text, or
+  credentials.
+- After an action the bot edits or follows up to show one unambiguous result:
+  `Перенесено на 15:30.` / `Отменено.` / `План подтверждён.`
 
-The source workflow has been backed up and an importable working copy was generated locally. It has not yet been loaded into the production n8n instance, so the live workflow remains unchanged until the import and acceptance tests are performed.
+## Morning agenda
+
+Schedule: daily 08:00 `Europe/Moscow`.
+
+The Calendar list branch must aggregate even zero returned items. Format:
+
+```text
+☀️ План на 17.09
+
+10:00 — Встреча
+15:00 — Забрать документы
+
+📌 В течение дня
+• Купить краску
+```
+
+For no events:
+
+```text
+☀️ План на 17.09
+
+На сегодня запланированных мероприятий нет.
+```
+
+Buttons below the agenda: `Добавить голосом` and `Открыть календарь`. The
+first opens a brief voice prompt; the second opens the Calendar URL. No
+Telegram reminder branch is used in this release.
+
+## Service boundary
+
+`personal-day-planner` is a separate Compose project on AI Prod 01. It only
+accepts normalized events/tasks from n8n over the internal `ri_cloud_n8n`
+network. It has no public port, stores no personal data, and receives its
+request token from a server-only `.env` file with restrictive permissions.
+
+Before deployment, inspect the actual Docker network name and n8n container on
+AI Prod 01. Do not create or modify unrelated containers or networks.
+
+## Acceptance test
+
+The release is accepted only after these six scenarios complete against the
+production Telegram bot and Google Calendar:
+
+1. Voice: a dated 30-minute event is created at the stated Moscow time; bot
+   returns both a voice response and correct text audit line.
+2. Voice: `отбой, ничего не ставь` creates no Calendar event.
+3. Voice: an all-day task appears as an all-day transparent item.
+4. Voice: three tasks are proposed only in free slots and are created only
+   after `Подтвердить план`.
+5. Voice: moving an ambiguous event presents options; selecting one clears the
+   button spinner immediately and results in one Calendar update.
+6. A manual Morning Agenda execution with zero events sends the explicit empty
+   plan at the intended format. A scheduled run is then checked at 08:00
+   Europe/Moscow.

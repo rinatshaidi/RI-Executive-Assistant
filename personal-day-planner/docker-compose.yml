@@ -1,0 +1,17 @@
+services:
+  personal-day-planner:
+    build: .
+    container_name: personal-day-planner
+    restart: unless-stopped
+    env_file: .env
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - ri_cloud_n8n
+
+networks:
+  ri_cloud_n8n:
+    external: true

@@ -17,6 +17,8 @@ temp/
 node_modules/
 dist/
 coverage/
+__pycache__/
+*.py[cod]
 
 # Local workflow/runtime state
 .n8n/

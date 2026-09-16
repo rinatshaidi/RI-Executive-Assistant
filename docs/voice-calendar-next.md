@@ -77,8 +77,8 @@ Rules:
    audit line, for example: `Создано: Встреча — 17.09, 10:00–10:30.`
 6. **All-day task:** create the transparent all-day Calendar event, then
    report: `Добавлено на 17.09: купить краску.`
-7. **Plan several tasks:** get events for the requested window, call
-   `personal-day-planner /v1/plan`, and return the proposed slots with buttons
+7. **Plan several tasks:** get events for the requested window, calculate the
+   proposed slots in n8n, and return them with buttons
    `Подтвердить план` and `Изменить`. Only confirmation creates events.
 8. **Move event:** search Calendar by a narrow date interval and title. For
    an exact requested time, update after identifying one event. Otherwise call
@@ -136,16 +136,6 @@ For no events:
 Buttons below the agenda: `Добавить голосом` and `Открыть календарь`. The
 first opens a brief voice prompt; the second opens the Calendar URL. No
 Telegram reminder branch is used in this release.
-
-## Service boundary
-
-`personal-day-planner` is a separate Compose project on AI Prod 01. It only
-accepts normalized events/tasks from n8n over the internal `ri_cloud_n8n`
-network. It has no public port, stores no personal data, and receives its
-request token from a server-only `.env` file with restrictive permissions.
-
-Before deployment, inspect the actual Docker network name and n8n container on
-AI Prod 01. Do not create or modify unrelated containers or networks.
 
 ## Acceptance test
 

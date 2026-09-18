@@ -11,8 +11,10 @@ import re
 import sqlite3
 import time
 from contextlib import contextmanager
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
@@ -20,6 +22,7 @@ from pydantic import BaseModel, Field
 APP_KEY = os.environ.get("RI_ASSISTANT_CORE_KEY", "")
 DB_PATH = Path(os.environ.get("RI_ASSISTANT_DB", "/data/assistant.db"))
 EDIT_TTL_SECONDS = 30 * 60
+MOSCOW = ZoneInfo("Europe/Moscow")
 
 app = FastAPI(title="RI Assistant Core", version="0.1.0")
 
@@ -37,6 +40,27 @@ class ResolveVoice(BaseModel):
 class CompleteEdit(BaseModel):
     chat_id: str | int
     event_id: str
+
+
+class CalendarInterval(BaseModel):
+    start: str
+    end: str
+    location: str = ""
+
+
+class DayTask(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    duration_minutes: int = Field(default=60, ge=15, le=480)
+    location: str = Field(default="", max_length=300)
+
+
+class DayPlanRequest(BaseModel):
+    date: str
+    tasks: list[DayTask] = Field(min_length=1, max_length=20)
+    calendar: list[CalendarInterval] = Field(default_factory=list, max_length=100)
+    work_start: str = "08:00"
+    work_end: str = "23:00"
+    event_buffer_minutes: int = Field(default=30, ge=0, le=120)
 
 
 def require_key(key: str | None) -> None:
@@ -74,6 +98,90 @@ def cancellation_requested(text: str) -> bool:
         "не создавай",
     )
     return any(phrase in normalized for phrase in phrases)
+
+
+def parse_moscow(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=MOSCOW)
+    return parsed.astimezone(MOSCOW)
+
+
+def free_slots(
+    day_start: datetime, day_end: datetime, calendar: list[CalendarInterval], buffer_minutes: int
+) -> list[tuple[datetime, datetime]]:
+    occupied: list[tuple[datetime, datetime]] = []
+    buffer = timedelta(minutes=buffer_minutes)
+    for item in calendar:
+        start, end = parse_moscow(item.start), parse_moscow(item.end)
+        start, end = max(start - buffer, day_start), min(end + buffer, day_end)
+        if end > start:
+            occupied.append((start, end))
+    occupied.sort(key=lambda item: item[0])
+    merged: list[list[datetime]] = []
+    for start, end in occupied:
+        if merged and start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    result: list[tuple[datetime, datetime]] = []
+    cursor = day_start
+    for start, end in merged:
+        if start > cursor:
+            result.append((cursor, start))
+        cursor = max(cursor, end)
+    if cursor < day_end:
+        result.append((cursor, day_end))
+    return result
+
+
+def plan_tasks(request: DayPlanRequest) -> dict:
+    try:
+        day = datetime.fromisoformat(request.date).date()
+        work_start_hour, work_start_minute = map(int, request.work_start.split(":"))
+        work_end_hour, work_end_minute = map(int, request.work_end.split(":"))
+    except ValueError as exc:
+        raise ValueError("date and working hours must use ISO formats") from exc
+    day_start = datetime(day.year, day.month, day.day, work_start_hour, work_start_minute, tzinfo=MOSCOW)
+    day_end = datetime(day.year, day.month, day.day, work_end_hour, work_end_minute, tzinfo=MOSCOW)
+    if day_end <= day_start:
+        raise ValueError("work_end must be after work_start")
+
+    slots = free_slots(day_start, day_end, request.calendar, request.event_buffer_minutes)
+    planned, unplanned = [], []
+    # Grouping equal declared locations avoids needless back-and-forth. It is not
+    # a traffic estimate: route durations require a future maps integration.
+    tasks = sorted(request.tasks, key=lambda task: (not bool(task.location.strip()), task.location.casefold(), task.title.casefold()))
+    for task in tasks:
+        duration = timedelta(minutes=task.duration_minutes)
+        placed = False
+        for index, (start, end) in enumerate(slots):
+            if end - start < duration:
+                continue
+            finish = start + duration
+            planned.append(
+                {
+                    "title": task.title,
+                    "start": start.isoformat(),
+                    "end": finish.isoformat(),
+                    "location": task.location,
+                }
+            )
+            if finish == end:
+                slots.pop(index)
+            else:
+                slots[index] = (finish, end)
+            placed = True
+            break
+        if not placed:
+            unplanned.append({"title": task.title, "duration_minutes": task.duration_minutes, "location": task.location})
+    return {
+        "date": request.date,
+        "planned": planned,
+        "unplanned": unplanned,
+        "free_slots": [{"start": start.isoformat(), "end": end.isoformat()} for start, end in slots],
+        "route_note": "Задачи с одинаковой указанной локацией сгруппированы; время в пути пока не рассчитывается.",
+    }
 
 
 @app.get("/health")
@@ -131,3 +239,12 @@ def complete_edit(payload: CompleteEdit, x_ri_assistant_key: str | None = Header
             (chat_id, payload.event_id),
         )
     return {"status": "cleared"}
+
+
+@app.post("/v1/day-plan")
+def day_plan(payload: DayPlanRequest, x_ri_assistant_key: str | None = Header(default=None)) -> dict:
+    require_key(x_ri_assistant_key)
+    try:
+        return plan_tasks(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

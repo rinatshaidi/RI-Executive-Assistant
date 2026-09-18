@@ -1,0 +1,21 @@
+services:
+  ri-assistant-core:
+    build: .
+    container_name: ri-assistant-core
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      RI_ASSISTANT_DB: /data/assistant.db
+    volumes:
+      - ri_assistant_core_data:/data
+    networks:
+      - ri_assistant_internal
+
+volumes:
+  ri_assistant_core_data:
+
+networks:
+  ri_assistant_internal:
+    name: ri-assistant-internal
+    internal: true

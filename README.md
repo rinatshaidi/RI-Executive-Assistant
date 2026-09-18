@@ -2,7 +2,29 @@
 
 A practical personal `n8n` automation that turns several inboxes into one useful morning Telegram summary. It is designed for a person who wants to see what needs attention without opening every mailbox.
 
-The project contains public-safe workflow templates only. It never includes mailbox addresses, passwords, OAuth tokens, Telegram chat IDs, email bodies, attachments, execution logs, or API keys.
+The project contains public-safe workflow templates and the private-network state
+component used by RI Assistant. It never includes mailbox addresses, passwords,
+OAuth tokens, Telegram chat IDs, email bodies, attachments, execution logs, or
+API keys.
+
+## RI Assistant
+
+RI Assistant is the voice calendar component of the same Telegram bot. Its
+technical specification is in
+[`docs/ri-assistant-technical-spec.md`](docs/ri-assistant-technical-spec.md).
+
+It uses a deliberately small hybrid architecture:
+
+- n8n handles Telegram, voice transcription, AI extraction, Google Calendar,
+  Morning agenda, and Mail Brief;
+- `ri-assistant-core` is a small FastAPI service that holds only the temporary
+  edit state for a conversation, preventing an edit request from becoming a new
+  event;
+- the service runs on a private Docker network and has no public port or
+  third-party credentials.
+
+The component is in [`ri-assistant-core`](ri-assistant-core). Copy
+`.env.example` to `.env` only on the deployment host; never commit that file.
 
 ## Current workflow: Mail Brief
 

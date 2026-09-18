@@ -26,3 +26,13 @@ __pycache__/
 # Local audit and export folders
 outputs/
 work/
+ri-assistant-core/.env
+ri-assistant-core/__pycache__/
+ri-assistant-core/app/__pycache__/
+ri-assistant-core/tests/__pycache__/
+n8n-backups/
+ri-assistant-core/*-core.sh
+ri-assistant-core/attach-network.sh
+ri-assistant-core/network-check.sh
+ri-assistant-core/configure-n8n-core-key.sh
+ri-assistant-core/acceptance.py

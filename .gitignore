@@ -27,6 +27,7 @@ __pycache__/
 outputs/
 work/
 ri-assistant-core/.env
+!ri-assistant-core/.env.example
 ri-assistant-core/__pycache__/
 ri-assistant-core/app/__pycache__/
 ri-assistant-core/tests/__pycache__/

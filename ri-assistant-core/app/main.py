@@ -10,6 +10,7 @@ import os
 import re
 import sqlite3
 import time
+import json
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -18,11 +19,13 @@ from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
+from openai import OpenAI, OpenAIError
 
 APP_KEY = os.environ.get("RI_ASSISTANT_CORE_KEY", "")
 DB_PATH = Path(os.environ.get("RI_ASSISTANT_DB", "/data/assistant.db"))
 EDIT_TTL_SECONDS = 30 * 60
 MOSCOW = ZoneInfo("Europe/Moscow")
+RESPONSES_MODEL = os.environ.get("OPENAI_RESPONSES_MODEL", "gpt-4.1-mini")
 
 app = FastAPI(title="RI Assistant Core", version="0.1.0")
 
@@ -61,6 +64,67 @@ class DayPlanRequest(BaseModel):
     work_start: str = "08:00"
     work_end: str = "23:00"
     event_buffer_minutes: int = Field(default=30, ge=0, le=120)
+
+
+class CalendarContextEvent(BaseModel):
+    event_id: str
+    title: str
+    start: str
+    end: str
+    location: str = ""
+
+
+class VoiceInterpretRequest(BaseModel):
+    chat_id: str | int
+    transcript: str = Field(min_length=1, max_length=8000)
+    calendar: list[CalendarContextEvent] = Field(default_factory=list, max_length=100)
+    timezone: str = "Europe/Moscow"
+
+
+VOICE_ACTIONS = (
+    "calendar_create",
+    "calendar_update",
+    "calendar_cancel",
+    "calendar_search",
+    "day_plan",
+    "day_task_create",
+    "note_save",
+    "clarify",
+)
+
+
+class VoiceAction(BaseModel):
+    action: Literal[
+        "calendar_create", "calendar_update", "calendar_cancel", "calendar_search",
+        "day_plan", "day_task_create", "note_save", "clarify",
+    ]
+    arguments: dict
+
+
+def tool_schema(name: str, description: str, properties: dict, required: list[str] | None = None) -> dict:
+    return {
+        "type": "function",
+        "name": name,
+        "description": description,
+        "parameters": {
+            "type": "object",
+            "properties": properties,
+            "required": required or [],
+            "additionalProperties": False,
+        },
+    }
+
+
+VOICE_TOOLS = [
+    tool_schema("calendar_create", "Create one calendar event only when date and time are clear.", {"title": {"type": "string"}, "start": {"type": "string"}, "end": {"type": "string"}, "location": {"type": "string"}}, ["title", "start", "end"]),
+    tool_schema("calendar_update", "Update one identified event. Use its event_id from calendar context.", {"event_id": {"type": "string"}, "title": {"type": "string"}, "start": {"type": "string"}, "end": {"type": "string"}, "location": {"type": "string"}}, ["event_id"]),
+    tool_schema("calendar_cancel", "Cancel one identified event. Use its event_id from calendar context.", {"event_id": {"type": "string"}}, ["event_id"]),
+    tool_schema("calendar_search", "Find events before proposing a change or cancellation when no single event is identified.", {"query": {"type": "string"}, "date_hint": {"type": "string"}}, ["query"]),
+    tool_schema("day_plan", "Propose slots for several tasks without creating events until the user confirms.", {"date": {"type": "string"}, "tasks": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "duration_minutes": {"type": "integer"}, "location": {"type": "string"}}, "required": ["title"]}}}, ["date", "tasks"]),
+    tool_schema("day_task_create", "Create an all-day task without a fixed time.", {"title": {"type": "string"}, "date": {"type": "string"}}, ["title", "date"]),
+    tool_schema("note_save", "Save a dictated note without creating a calendar event.", {"content": {"type": "string"}, "title": {"type": "string"}}, ["content"]),
+    tool_schema("clarify", "Ask one short Russian clarification when a safe action cannot be determined.", {"question": {"type": "string"}}, ["question"]),
+]
 
 
 def require_key(key: str | None) -> None:
@@ -184,6 +248,37 @@ def plan_tasks(request: DayPlanRequest) -> dict:
     }
 
 
+def voice_instruction(payload: VoiceInterpretRequest) -> str:
+    calendar = [item.model_dump() for item in payload.calendar]
+    return (
+        "You are RI Assistant, a careful executive assistant. Interpret the user's "
+        "Russian voice transcription and call exactly one tool. Do not create, update, "
+        "or cancel a calendar event unless the date, time, and target are unambiguous. "
+        "For an uncertain target, use calendar_search or clarify. For multiple tasks, "
+        "use day_plan; it proposes a plan and does not create events. For a task without "
+        "a fixed time, use day_task_create. For dictated ideas, use note_save. Do not "
+        "invent event identifiers. Return all user-facing text in Russian. "
+        f"Timezone: {payload.timezone}. Calendar context: {json.dumps(calendar, ensure_ascii=False)}. "
+        f"User transcription: {payload.transcript}"
+    )
+
+
+def parse_voice_tool_call(name: str, arguments: str) -> VoiceAction:
+    if name not in VOICE_ACTIONS:
+        raise ValueError("model requested an unsupported action")
+    decoded = json.loads(arguments)
+    if not isinstance(decoded, dict):
+        raise ValueError("tool arguments must be an object")
+    return VoiceAction(action=name, arguments=decoded)
+
+
+def get_openai_client() -> OpenAI:
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="OpenAI API key is not configured")
+    return OpenAI(api_key=api_key)
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     with connection() as db:
@@ -239,6 +334,29 @@ def complete_edit(payload: CompleteEdit, x_ri_assistant_key: str | None = Header
             (chat_id, payload.event_id),
         )
     return {"status": "cleared"}
+
+
+@app.post("/v1/voice/interpret")
+def interpret_voice(payload: VoiceInterpretRequest, x_ri_assistant_key: str | None = Header(default=None)) -> dict:
+    require_key(x_ri_assistant_key)
+    try:
+        response = get_openai_client().responses.create(
+            model=RESPONSES_MODEL,
+            input=voice_instruction(payload),
+            tools=VOICE_TOOLS,
+            tool_choice="required",
+            parallel_tool_calls=False,
+            store=False,
+        )
+        calls = [item for item in response.output if item.type == "function_call"]
+        if len(calls) != 1:
+            raise ValueError("model must request exactly one action")
+        action = parse_voice_tool_call(calls[0].name, calls[0].arguments)
+        return action.model_dump()
+    except HTTPException:
+        raise
+    except (OpenAIError, ValueError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=502, detail="voice interpretation unavailable") from exc
 
 
 @app.post("/v1/day-plan")

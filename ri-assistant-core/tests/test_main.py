@@ -56,3 +56,20 @@ def test_day_plan_keeps_event_buffer_and_places_tasks(monkeypatch, tmp_path):
     # The meeting buffers 09:30–11:30, so no task may intrude into it.
     assert body["planned"][1]["end"] == "2026-09-20T09:30:00+03:00"
     assert body["free_slots"][0]["start"] == "2026-09-20T11:30:00+03:00"
+
+
+def test_voice_tool_call_allows_only_declared_actions():
+    action = main.parse_voice_tool_call(
+        "calendar_search", '{"query":"встреча с Иваном","date_hint":"завтра"}'
+    )
+    assert action.action == "calendar_search"
+    assert action.arguments["query"] == "встреча с Иваном"
+
+
+def test_voice_tool_call_rejects_unknown_action():
+    try:
+        main.parse_voice_tool_call("run_shell", "{}")
+    except ValueError as error:
+        assert "unsupported" in str(error)
+    else:
+        raise AssertionError("unknown tool must be rejected")

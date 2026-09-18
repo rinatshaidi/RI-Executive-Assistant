@@ -1,4 +1,4 @@
-# Mail Assistant
+# Executive Assistant
 
 A practical personal `n8n` automation that turns several inboxes into one useful morning Telegram summary. It is designed for a person who wants to see what needs attention without opening every mailbox.
 

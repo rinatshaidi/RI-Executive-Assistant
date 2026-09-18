@@ -11,6 +11,7 @@ services:
       - ri_assistant_core_data:/data
     networks:
       - ri_assistant_internal
+      - ri_assistant_egress
 
 volumes:
   ri_assistant_core_data:
@@ -19,3 +20,5 @@ networks:
   ri_assistant_internal:
     name: ri-assistant-internal
     internal: true
+  ri_assistant_egress:
+    name: ri-assistant-egress

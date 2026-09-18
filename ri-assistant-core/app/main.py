@@ -250,6 +250,7 @@ def plan_tasks(request: DayPlanRequest) -> dict:
 
 def voice_instruction(payload: VoiceInterpretRequest) -> str:
     calendar = [item.model_dump() for item in payload.calendar]
+    today = datetime.now(MOSCOW).date().isoformat()
     return (
         "You are RI Assistant, a careful executive assistant. Interpret the user's "
         "Russian voice transcription and call exactly one tool. Do not create, update, "
@@ -258,6 +259,9 @@ def voice_instruction(payload: VoiceInterpretRequest) -> str:
         "use day_plan; it proposes a plan and does not create events. For a task without "
         "a fixed time, use day_task_create. For dictated ideas, use note_save. Do not "
         "invent event identifiers. Return all user-facing text in Russian. "
+        f"Today in {payload.timezone} is {today}. Resolve relative Russian dates such as "
+        "'сегодня' and 'завтра' from that date. Calendar start and end values must be "
+        "ISO 8601 datetimes with the +03:00 offset. "
         f"Timezone: {payload.timezone}. Calendar context: {json.dumps(calendar, ensure_ascii=False)}. "
         f"User transcription: {payload.transcript}"
     )

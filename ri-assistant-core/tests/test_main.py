@@ -73,3 +73,11 @@ def test_voice_tool_call_rejects_unknown_action():
         assert "unsupported" in str(error)
     else:
         raise AssertionError("unknown tool must be rejected")
+
+
+def test_voice_instruction_supplies_current_date_and_timezone():
+    instruction = main.voice_instruction(
+        main.VoiceInterpretRequest(chat_id="1", transcript="Поставь встречу завтра в 10")
+    )
+    assert main.datetime.now(main.MOSCOW).date().isoformat() in instruction
+    assert "ISO 8601 datetimes with the +03:00 offset" in instruction

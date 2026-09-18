@@ -119,7 +119,7 @@ VOICE_TOOLS = [
     tool_schema("calendar_create", "Create one calendar event only when date and time are clear.", {"title": {"type": "string"}, "start": {"type": "string"}, "end": {"type": "string"}, "location": {"type": "string"}}, ["title", "start", "end"]),
     tool_schema("calendar_update", "Update one identified event. Use its event_id from calendar context.", {"event_id": {"type": "string"}, "title": {"type": "string"}, "start": {"type": "string"}, "end": {"type": "string"}, "location": {"type": "string"}}, ["event_id"]),
     tool_schema("calendar_cancel", "Cancel one identified event. Use its event_id from calendar context.", {"event_id": {"type": "string"}}, ["event_id"]),
-    tool_schema("calendar_search", "Find events before proposing a change or cancellation when no single event is identified.", {"query": {"type": "string"}, "date_hint": {"type": "string"}}, ["query"]),
+    tool_schema("calendar_search", "Find events before proposing a change or cancellation when no single event is identified.", {"operation": {"type": "string", "enum": ["update", "cancel", "find"]}, "query": {"type": "string"}, "date_hint": {"type": "string"}}, ["operation", "query"]),
     tool_schema("day_plan", "Propose slots for several tasks without creating events until the user confirms.", {"date": {"type": "string"}, "tasks": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "duration_minutes": {"type": "integer"}, "location": {"type": "string"}}, "required": ["title"]}}}, ["date", "tasks"]),
     tool_schema("day_task_create", "Create an all-day task without a fixed time.", {"title": {"type": "string"}, "date": {"type": "string"}}, ["title", "date"]),
     tool_schema("note_save", "Save a dictated note without creating a calendar event.", {"content": {"type": "string"}, "title": {"type": "string"}}, ["content"]),
@@ -256,7 +256,9 @@ def voice_instruction(payload: VoiceInterpretRequest) -> str:
         "Russian voice transcription and call exactly one tool. Do not create, update, "
         "or cancel a calendar event unless the date, time, and target are unambiguous. "
         "For an uncertain target, use calendar_search or clarify. For multiple tasks, "
-        "use day_plan; it proposes a plan and does not create events. For a task without "
+        "use day_plan; it proposes a plan and does not create events. For a calendar "
+        "change or cancellation without one identified event, use calendar_search with "
+        "operation update or cancel. For a task without "
         "a fixed time, use day_task_create. For dictated ideas, use note_save. Do not "
         "invent event identifiers. Return all user-facing text in Russian. "
         f"Today in {payload.timezone} is {today}. Resolve relative Russian dates such as "

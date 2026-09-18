@@ -5,6 +5,10 @@ Stores no email bodies or attachments.
 import hmac
 import imaplib
 import json
+from email import policy
+from email.header import decode_header, make_header
+from email.parser import BytesParser
+from email.utils import parsedate_to_datetime
 import os
 import re
 import sqlite3
@@ -22,6 +26,7 @@ REFRESH_HOUR = int(os.getenv("TRACKER_REFRESH_HOUR", "7"))
 REFRESH_MINUTE = int(os.getenv("TRACKER_REFRESH_MINUTE", "30"))
 REFRESH_STATE = {"lastRefreshAt": None, "lastErrorCount": 0}
 REFRESH_LOCK = threading.Lock()
+IMAP_SOURCES = tuple(filter(None, (item.strip() for item in os.getenv("IMAP_SOURCES", "").split(","))))
 
 
 def now():
@@ -61,6 +66,144 @@ def source_config(source):
         raise ValueError(f"IMAP configuration for source '{source}' is missing")
     return values
 
+
+
+
+def configured_sources():
+    if not IMAP_SOURCES:
+        raise ValueError("IMAP_SOURCES is not configured")
+    return IMAP_SOURCES
+
+
+def imap_date(value):
+    return value.strftime("%d-%b-%Y")
+
+
+def decode_header_value(value):
+    if not value:
+        return ""
+    try:
+        return str(make_header(decode_header(value)))
+    except Exception:
+        return value
+
+
+def message_headers(payload):
+    message = BytesParser(policy=policy.default).parsebytes(payload)
+    raw_date = message.get("Date", "")
+    try:
+        received_at = parsedate_to_datetime(raw_date).astimezone(timezone.utc).isoformat()
+    except (TypeError, ValueError, OverflowError):
+        received_at = ""
+    return {
+        "rfcMessageId": message.get("Message-ID", "").strip(),
+        "from": decode_header_value(message.get("From", "")),
+        "subject": decode_header_value(message.get("Subject", "")),
+        "receivedAt": received_at,
+    }
+
+
+def fetch_headers(client, uid):
+    status, payload = client.uid(
+        "fetch", uid, "(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID FROM SUBJECT DATE)])"
+    )
+    if status != "OK" or not payload:
+        return None
+    for part in payload:
+        if isinstance(part, tuple) and isinstance(part[1], bytes):
+            return message_headers(part[1])
+    return None
+
+
+def inbox_messages_for_date(source, target_date):
+    config = source_config(source)
+    start = datetime.fromisoformat(target_date).replace(tzinfo=MOSCOW)
+    end = start + timedelta(days=1)
+    records = []
+    with imaplib.IMAP4_SSL(config["HOST"], int(config["PORT"])) as client:
+        client.login(config["USER"], config["PASSWORD"])
+        client.select("INBOX", readonly=True)
+        status, matches = client.uid(
+            "search", None, "SINCE", imap_date(start), "BEFORE", imap_date(end)
+        )
+        if status != "OK":
+            raise RuntimeError("imap_search_failed")
+        for uid in matches[0].split() if matches and matches[0] else []:
+            headers = fetch_headers(client, uid)
+            if headers and headers["rfcMessageId"]:
+                records.append({
+                    "source": source,
+                    "mailbox": config["USER"],
+                    "providerMessageId": uid.decode("ascii", errors="replace"),
+                    **headers,
+                })
+    return records
+
+
+def sent_mailbox(client):
+    status, boxes = client.list()
+    if status == "OK":
+        for box in boxes or []:
+            line = box.decode("utf-8", errors="replace") if isinstance(box, bytes) else str(box)
+            if r"\Sent" in line:
+                match = re.search(r'"([^"]+)"\s*$', line)
+                if match:
+                    return match.group(1)
+    return "Sent"
+
+
+def sent_reply_for(source, message_id):
+    config = source_config(source)
+    with imaplib.IMAP4_SSL(config["HOST"], int(config["PORT"])) as client:
+        client.login(config["USER"], config["PASSWORD"])
+        mailbox = sent_mailbox(client)
+        status, _ = client.select(mailbox, readonly=True)
+        if status != "OK":
+            return None
+        for header in ("IN-REPLY-TO", "REFERENCES"):
+            status, matches = client.search(None, "HEADER", header, message_id)
+            if status != "OK" or not matches or not matches[0]:
+                continue
+            sequence = matches[0].split()[-1]
+            status, payload = client.fetch(sequence, "(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID DATE)])")
+            if status != "OK" or not payload:
+                continue
+            for part in payload:
+                if isinstance(part, tuple) and isinstance(part[1], bytes):
+                    headers = message_headers(part[1])
+                    return {
+                        "source": source,
+                        "rfcMessageId": message_id,
+                        "answered": True,
+                        "replyMessageId": headers["rfcMessageId"],
+                        "answeredAt": headers["receivedAt"],
+                        "matchConfidence": "header",
+                    }
+    return {"source": source, "rfcMessageId": message_id, "answered": False}
+
+
+def collect_inbox_messages(target_date):
+    records, errors = [], []
+    for source in configured_sources():
+        try:
+            records.extend(inbox_messages_for_date(source, target_date))
+        except Exception:
+            errors.append(source)
+    return records, errors
+
+
+def lookup_sent_replies(items):
+    results, errors = [], []
+    for item in items:
+        source = item.get("source", "")
+        message_id = item.get("rfcMessageId", "")
+        if not source or not message_id:
+            continue
+        try:
+            results.append(sent_reply_for(source, message_id))
+        except Exception:
+            errors.append(source)
+    return results, sorted(set(errors))
 
 def unread_status(source, message_id):
     config = source_config(source)
@@ -176,7 +319,10 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(404, {"error": "not_found"})
 
     def do_POST(self):
-        if not self.authorized():
+        # /internal routes are reachable only on the private mail-brief_n8n Docker network.
+        # Existing /v1 routes retain bearer-token authentication.
+        internal = self.path.startswith("/internal/")
+        if not internal and not self.authorized():
             self.reply(401, {"error": "unauthorized"})
             return
         try:
@@ -203,6 +349,22 @@ class Handler(BaseHTTPRequestHandler):
                 refresh_once()
                 items, _ = tracked_unread(refresh=False)
                 self.reply(200, {"items": items})
+                return
+            if self.path in ("/v1/messages", "/internal/messages"):
+                target_date = payload.get("date", "")
+                try:
+                    datetime.fromisoformat(target_date)
+                except (TypeError, ValueError):
+                    raise ValueError("date must be YYYY-MM-DD")
+                items, errors = collect_inbox_messages(target_date)
+                self.reply(200, {"items": items, "errorSources": errors})
+                return
+            if self.path in ("/v1/reply-status", "/internal/reply-status"):
+                records = payload.get("items", [])
+                if not isinstance(records, list):
+                    raise ValueError("items must be an array")
+                items, errors = lookup_sent_replies(records)
+                self.reply(200, {"items": items, "errorSources": errors})
                 return
             self.reply(404, {"error": "not_found"})
         except (ValueError, json.JSONDecodeError) as error:

@@ -25,17 +25,17 @@ app = FastAPI(title="RI Assistant Core", version="0.1.0")
 
 
 class BeginEdit(BaseModel):
-    chat_id: str
+    chat_id: str | int
     event_id: str
 
 
 class ResolveVoice(BaseModel):
-    chat_id: str
+    chat_id: str | int
     transcript: str = Field(min_length=1, max_length=8000)
 
 
 class CompleteEdit(BaseModel):
-    chat_id: str
+    chat_id: str | int
     event_id: str
 
 
@@ -86,10 +86,11 @@ def health() -> dict[str, str]:
 @app.post("/v1/edit/begin")
 def begin_edit(payload: BeginEdit, x_ri_assistant_key: str | None = Header(default=None)) -> dict[str, str]:
     require_key(x_ri_assistant_key)
+    chat_id = str(payload.chat_id)
     with connection() as db:
         db.execute(
             "INSERT OR REPLACE INTO pending_edits(chat_id, event_id, expires_at) VALUES (?, ?, ?)",
-            (payload.chat_id, payload.event_id, int(time.time()) + EDIT_TTL_SECONDS),
+            (chat_id, payload.event_id, int(time.time()) + EDIT_TTL_SECONDS),
         )
     return {
         "status": "awaiting_voice",
@@ -100,18 +101,19 @@ def begin_edit(payload: BeginEdit, x_ri_assistant_key: str | None = Header(defau
 @app.post("/v1/voice/resolve")
 def resolve_voice(payload: ResolveVoice, x_ri_assistant_key: str | None = Header(default=None)) -> dict[str, str | bool | None]:
     require_key(x_ri_assistant_key)
+    chat_id = str(payload.chat_id)
     if cancellation_requested(payload.transcript):
         with connection() as db:
-            db.execute("DELETE FROM pending_edits WHERE chat_id = ?", (payload.chat_id,))
+            db.execute("DELETE FROM pending_edits WHERE chat_id = ?", (chat_id,))
         return {"intent": "cancel_request", "event_id": None, "requires_update": False}
 
     now = int(time.time())
     with connection() as db:
         row = db.execute(
-            "SELECT event_id, expires_at FROM pending_edits WHERE chat_id = ?", (payload.chat_id,)
+            "SELECT event_id, expires_at FROM pending_edits WHERE chat_id = ?", (chat_id,)
         ).fetchone()
         if row and row[1] <= now:
-            db.execute("DELETE FROM pending_edits WHERE chat_id = ?", (payload.chat_id,))
+            db.execute("DELETE FROM pending_edits WHERE chat_id = ?", (chat_id,))
             row = None
 
     if row:
@@ -122,9 +124,10 @@ def resolve_voice(payload: ResolveVoice, x_ri_assistant_key: str | None = Header
 @app.post("/v1/edit/complete")
 def complete_edit(payload: CompleteEdit, x_ri_assistant_key: str | None = Header(default=None)) -> dict[str, Literal["cleared"]]:
     require_key(x_ri_assistant_key)
+    chat_id = str(payload.chat_id)
     with connection() as db:
         db.execute(
             "DELETE FROM pending_edits WHERE chat_id = ? AND event_id = ?",
-            (payload.chat_id, payload.event_id),
+            (chat_id, payload.event_id),
         )
     return {"status": "cleared"}
